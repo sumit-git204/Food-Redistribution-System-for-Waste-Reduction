@@ -199,53 +199,61 @@ export const bulkUploadCSV = async (req, res) => {
     }
 
     const results = [];
+    let addedCount = 0;
+
     fs.createReadStream(req.file.path)
       .pipe(csvParser())
       .on('data', (data) => results.push(data))
       .on('end', async () => {
-            const name = (row.itemName || row.name || '').trim();
-            const category = (row.category || '').trim();
-            const expiryDate = row.expiryDate;
+        for (const row of results) {
+          const name = (row.itemName || row.name || '').trim();
+          const category = (row.category || '').trim();
+          const expiryDate = row.expiryDate;
 
-            if (name && category && expiryDate) {
-              const expiry = new Date(expiryDate);
-              const qty = parseFloat(row.currentStock || row.quantity) || 1;
-              const minStock = parseFloat(row.minimumStock) || 5;
-              const daysLeft = Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24));
-              let status = 'fresh';
-              if (daysLeft <= 0) status = 'expired';
-              else if (daysLeft <= 3) status = 'near_expiry';
+          if (name && category && expiryDate) {
+            const expiry = new Date(expiryDate);
+            const qty = parseFloat(row.currentStock || row.quantity) || 1;
+            const minStock = parseFloat(row.minimumStock) || 5;
+            const daysLeft = Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24));
+            let status = 'fresh';
+            if (daysLeft <= 0) status = 'expired';
+            else if (daysLeft <= 3) status = 'near_expiry';
 
-              const perishabilityRisk = row.perishabilityRisk || (category.includes('Dairy') || category.includes('Produce') || category.includes('Meat') || category.includes('Seafood') || category.includes('Bakery') ? 'High' : 'Low');
+            const perishabilityRisk = row.perishabilityRisk || (category.includes('Dairy') || category.includes('Produce') || category.includes('Meat') || category.includes('Seafood') || category.includes('Bakery') ? 'High' : 'Low');
 
-              await InventoryItem.create({
-                orgId: req.orgId,
-                name,
-                barcode: row.barcode || `BC-${Math.floor(100000 + Math.random() * 900000)}`,
-                category,
-                quantity: qty,
-                minimumStock: minStock,
-                unit: row.unit || 'items',
-                supplier: row.supplier || '',
-                manufactureDate: row.manufactureDate ? new Date(row.manufactureDate) : undefined,
-                expiryDate: expiry,
-                storageCondition: row.storageCondition || row.storageType || 'Room Temperature',
-                storageType: row.storageCondition || row.storageType || 'Room Temperature',
-                notes: row.notes || '',
-                daysToExpiryThreshold: parseInt(row.daysToExpiryThreshold) || 3,
-                perishabilityRisk,
-                unitPrice: parseFloat(row.unitPrice) || 0,
-                wasteRiskScore: calculateRiskScore(expiry, perishabilityRisk, qty),
-                status
-              });
-              addedCount++;
-            }
+            await InventoryItem.create({
+              orgId: req.orgId,
+              name,
+              barcode: row.barcode || `BC-${Math.floor(100000 + Math.random() * 900000)}`,
+              category,
+              quantity: qty,
+              minimumStock: minStock,
+              unit: row.unit || 'items',
+              supplier: row.supplier || '',
+              manufactureDate: row.manufactureDate ? new Date(row.manufactureDate) : undefined,
+              expiryDate: expiry,
+              storageCondition: row.storageCondition || row.storageType || 'Room Temperature',
+              storageType: row.storageCondition || row.storageType || 'Room Temperature',
+              notes: row.notes || '',
+              daysToExpiryThreshold: parseInt(row.daysToExpiryThreshold) || 3,
+              perishabilityRisk,
+              unitPrice: parseFloat(row.unitPrice) || 0,
+              wasteRiskScore: calculateRiskScore(expiry, perishabilityRisk, qty),
+              status
+            });
+            addedCount++;
           }
-          // Clean temporary file
-          if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-          res.json({ message: `Successfully imported ${addedCount} items from CSV`, importedCount: addedCount });
-        });
+        }
+
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.json({ message: `Successfully imported ${addedCount} items from CSV`, importedCount: addedCount });
+      })
+      .on('error', (error) => {
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.status(500).json({ message: error.message });
+      });
   } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     res.status(500).json({ message: error.message });
   }
 };
