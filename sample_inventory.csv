@@ -1,0 +1,7 @@
+itemName,category,currentStock,minimumStock,unit,supplier,manufactureDate,expiryDate,barcode,storageCondition,notes
+Fresh Mozzarella Cheese 250g,Dairy & Eggs,20,5,packs,Valley Dairy,2026-07-20,2026-08-05,8901234567990,Refrigerated,Keep chilled at 4C
+Artisan Baguette,Bakery & Bread,15,8,items,Sunrise Bakery,2026-07-27,2026-07-31,8901234567991,Room Temperature,Freshly baked daily
+Organic Spinach Leaves 500g,Fresh Produce,10,12,packs,Green Leaf Farms,2026-07-25,2026-07-30,8901234567992,Refrigerated,Wash before prep
+Wild Caught Salmon Fillet,Meat & Seafood,8,5,kg,Ocean Harvest,2026-07-26,2026-07-29,8901234567993,Refrigerated,Store on crushed ice
+Extra Virgin Olive Oil 1L,Pantry & Canned Goods,30,10,items,Mediterranean Gourmet,2026-01-10,2027-01-10,8901234567994,Dry Storage,Keep away from heat
+Greek Style Feta Cheese 200g,Dairy & Eggs,4,8,packs,Olympus Foods,2026-07-15,2026-08-02,8901234567995,Refrigerated,Low stock warning

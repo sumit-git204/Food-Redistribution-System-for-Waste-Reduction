@@ -1,5 +1,5 @@
 {
-  "name": "food-redistribution-client",
+  "name": "food-redistribution-frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",

@@ -203,37 +203,48 @@ export const bulkUploadCSV = async (req, res) => {
       .pipe(csvParser())
       .on('data', (data) => results.push(data))
       .on('end', async () => {
-        let addedCount = 0;
-        for (const row of results) {
-          if (row.name && row.category && row.expiryDate) {
-            const expiry = new Date(row.expiryDate);
-            const qty = parseFloat(row.quantity) || 1;
-            const daysLeft = Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24));
-            let status = 'fresh';
-            if (daysLeft <= 0) status = 'expired';
-            else if (daysLeft <= 3) status = 'near_expiry';
+            const name = (row.itemName || row.name || '').trim();
+            const category = (row.category || '').trim();
+            const expiryDate = row.expiryDate;
 
-            await InventoryItem.create({
-              orgId: req.orgId,
-              name: row.name.trim(),
-              barcode: row.barcode || `BC-${Math.floor(100000 + Math.random() * 900000)}`,
-              category: row.category.trim(),
-              quantity: qty,
-              unit: row.unit || 'kg',
-              expiryDate: expiry,
-              daysToExpiryThreshold: parseInt(row.daysToExpiryThreshold) || 3,
-              perishabilityRisk: row.perishabilityRisk || 'Medium',
-              unitPrice: parseFloat(row.unitPrice) || 0,
-              wasteRiskScore: calculateRiskScore(expiry, row.perishabilityRisk || 'Medium', qty),
-              status
-            });
-            addedCount++;
+            if (name && category && expiryDate) {
+              const expiry = new Date(expiryDate);
+              const qty = parseFloat(row.currentStock || row.quantity) || 1;
+              const minStock = parseFloat(row.minimumStock) || 5;
+              const daysLeft = Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24));
+              let status = 'fresh';
+              if (daysLeft <= 0) status = 'expired';
+              else if (daysLeft <= 3) status = 'near_expiry';
+
+              const perishabilityRisk = row.perishabilityRisk || (category.includes('Dairy') || category.includes('Produce') || category.includes('Meat') || category.includes('Seafood') || category.includes('Bakery') ? 'High' : 'Low');
+
+              await InventoryItem.create({
+                orgId: req.orgId,
+                name,
+                barcode: row.barcode || `BC-${Math.floor(100000 + Math.random() * 900000)}`,
+                category,
+                quantity: qty,
+                minimumStock: minStock,
+                unit: row.unit || 'items',
+                supplier: row.supplier || '',
+                manufactureDate: row.manufactureDate ? new Date(row.manufactureDate) : undefined,
+                expiryDate: expiry,
+                storageCondition: row.storageCondition || row.storageType || 'Room Temperature',
+                storageType: row.storageCondition || row.storageType || 'Room Temperature',
+                notes: row.notes || '',
+                daysToExpiryThreshold: parseInt(row.daysToExpiryThreshold) || 3,
+                perishabilityRisk,
+                unitPrice: parseFloat(row.unitPrice) || 0,
+                wasteRiskScore: calculateRiskScore(expiry, perishabilityRisk, qty),
+                status
+              });
+              addedCount++;
+            }
           }
-        }
-        // Clean temporary file
-        fs.unlinkSync(req.file.path);
-        res.json({ message: `Successfully imported ${addedCount} items`, importedCount: addedCount });
-      });
+          // Clean temporary file
+          if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+          res.json({ message: `Successfully imported ${addedCount} items from CSV`, importedCount: addedCount });
+        });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

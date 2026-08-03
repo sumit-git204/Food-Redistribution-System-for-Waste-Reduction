@@ -206,17 +206,18 @@ export const InventoryPage = ({ onOpenQRScanner, onOpenCSVModal }) => {
               <tr className="bg-emerald-50/70 border-b border-emerald-100 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
                 <th className="p-4">Item & Barcode</th>
                 <th className="p-4">Category</th>
-                <th className="p-4">Current Stock</th>
+                <th className="p-4">Stock (Curr / Min)</th>
+                <th className="p-4">Supplier</th>
+                <th className="p-4">Storage</th>
                 <th className="p-4">Expiry Date</th>
-                <th className="p-4">Risk Score</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Quick Actions</th>
+                <th className="p-4">Status & Notes</th>
+                <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-slate-400 font-medium">
+                  <td colSpan="8" className="p-8 text-center text-slate-400 font-medium">
                     No matching inventory items found.
                   </td>
                 </tr>
@@ -235,28 +236,35 @@ export const InventoryPage = ({ onOpenQRScanner, onOpenCSVModal }) => {
                         </span>
                       </td>
                       <td className="p-4 font-bold text-emerald-800">
-                        {item.quantity} <span className="text-[11px] font-normal text-slate-500">{item.unit}</span>
+                        <div>{item.quantity} <span className="text-[11px] font-normal text-slate-500">{item.unit}</span></div>
+                        <div className="text-[10px] font-medium text-slate-400">Min: {item.minimumStock || 5} {item.unit}</div>
+                      </td>
+                      <td className="p-4 text-slate-700 font-medium">
+                        {item.supplier || 'Standard Supplier'}
+                      </td>
+                      <td className="p-4 text-slate-600 font-medium">
+                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-semibold">
+                          {item.storageCondition || item.storageType || 'Room Temperature'}
+                        </span>
                       </td>
                       <td className="p-4 font-medium text-slate-700">
                         {new Date(item.expiryDate).toLocaleDateString()}
                       </td>
                       <td className="p-4">
-                        <div className="flex items-center space-x-2">
-                          <span className={`font-extrabold ${item.wasteRiskScore > 75 ? 'text-rose-600' : 'text-emerald-700'}`}>
-                            {item.wasteRiskScore}/100
-                          </span>
+                        <div className="space-y-1">
+                          {item.status === 'expired' && (
+                            <span className="px-2 py-0.5 rounded-full badge-critical text-[10px] font-bold">Expired</span>
+                          )}
+                          {item.status === 'near_expiry' && (
+                            <span className="px-2 py-0.5 rounded-full badge-warning text-[10px] font-bold">Near Expiry ({daysLeft}d)</span>
+                          )}
+                          {item.status === 'fresh' && (
+                            <span className="px-2 py-0.5 rounded-full badge-safe text-[10px] font-bold">Fresh</span>
+                          )}
+                          {item.notes && (
+                            <div className="text-[10px] text-slate-500 italic max-w-[140px] truncate">{item.notes}</div>
+                          )}
                         </div>
-                      </td>
-                      <td className="p-4">
-                        {item.status === 'expired' && (
-                          <span className="px-2.5 py-1 rounded-full badge-critical text-[11px] font-bold">Expired</span>
-                        )}
-                        {item.status === 'near_expiry' && (
-                          <span className="px-2.5 py-1 rounded-full badge-warning text-[11px] font-bold">Near Expiry ({daysLeft}d)</span>
-                        )}
-                        {item.status === 'fresh' && (
-                          <span className="px-2.5 py-1 rounded-full badge-safe text-[11px] font-bold">Fresh</span>
-                        )}
                       </td>
                       <td className="p-4 text-right space-x-2">
                         <button

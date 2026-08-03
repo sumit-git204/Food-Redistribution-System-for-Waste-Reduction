@@ -21,7 +21,12 @@ const inventoryItemSchema = new mongoose.Schema(
       enum: ['High', 'Medium', 'Low'], 
       default: 'Medium' 
     },
-    storageType: { type: String, default: 'Ambient' },
+    storageType: { type: String, default: 'Room Temperature' },
+    storageCondition: { type: String, default: 'Room Temperature' },
+    minimumStock: { type: Number, default: 5 },
+    supplier: { type: String, default: '' },
+    manufactureDate: { type: Date },
+    notes: { type: String, default: '' },
     unitPrice: { type: Number, default: 0 },
     wasteRiskScore: { type: Number, default: 0 }, // 0 to 100 risk score
     recommendedReorder: { type: Number, default: 0 },
